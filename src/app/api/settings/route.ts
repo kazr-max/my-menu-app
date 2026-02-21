@@ -38,6 +38,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Blob Set Error:", error);
-    return NextResponse.json({ error: "Failed to save settings" }, { status: 500 });
+    return NextResponse.json({ error: `Failed to save settings: ${(error as Error).message}` }, { status: 500 });
   }
 }
