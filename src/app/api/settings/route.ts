@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     
     // JSON文字列としてBlobに保存 (addRandomSuffix: false で上書き更新)
-    await put(SETTINGS_FILENAME, JSON.stringify(body), { access: 'public', addRandomSuffix: false });
+    await put(SETTINGS_FILENAME, JSON.stringify(body), { access: 'public', addRandomSuffix: false, allowOverwrite: true });
 
     return NextResponse.json({ success: true });
   } catch (error) {
