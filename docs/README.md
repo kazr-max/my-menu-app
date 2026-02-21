@@ -13,7 +13,7 @@
 | **Styling** | Tailwind CSS | 4.x | スタイリング |
 | **Auth** | NextAuth.js | 4.24.13 | 認証 (Google OAuth) |
 | **AI** | Google Generative AI SDK | 0.24.1 | Gemini API 連携 |
-| **Database** | @vercel/kv | 3.0.0 | ユーザー設定の保存 (Redis) |
+| **Database** | @vercel/blob | 2.0.0 | ユーザー設定の保存 (JSONファイル) |
 | **External API** | googleapis | 170.1.0 | Google Calendar 操作 |
 | **Icons** | lucide-react | 0.562.0 | アイコン表示 |
 
@@ -43,6 +43,9 @@ src/
 ### 4.1 認証機能 (Authentication)
 *   **概要**: Google アカウントを使用したログイン機能。
 *   **実装ファイル**: `src/lib/auth.ts`
+*   **利用方針**:
+    *   **献立生成・設定保存**: ログイン不要で利用可能（デフォルトユーザーとして扱われる）。
+    *   **カレンダー登録**: Google Calendar API を利用するため、**ログイン必須**。
 *   **プロバイダー**: Google Provider
 *   **権限スコープ**:
     *   `openid`, `email`, `profile`: 基本プロフィール情報
@@ -52,18 +55,21 @@ src/
 ### 4.2 設定管理機能 (Settings)
 *   **概要**: ユーザーごとの家族構成や調理環境設定を管理する。
 *   **実装ファイル**: `src/app/settings/page.tsx`, `src/app/api/settings/route.ts`
-*   **データストア**: Vercel KV (Redis)
-*   **キー形式**: `user_settings:<email>`
+*   **データストア**: Vercel Blob (JSON Storage)
+*   **キー形式**: `user_settings.json` (固定ファイル名)
 *   **主な設定項目**:
     *   家族構成（大人の人数、子供の情報）
     *   嫌いな食材
     *   ホットクック型番・調理モード
     *   連携するカレンダーID
+*   **挙動**:
+    *   ログイン状態に関わらず、常に単一の共有設定を読み書きする。
+    *   家族で異なるGoogleアカウントを使用していても、設定内容は共有される（家族共用アプリとしての運用を想定）。
 
 ### 4.3 AI チャット・献立提案機能 (Chat)
 *   **概要**: ユーザーの入力と設定情報を元に、AI が献立を提案する。
 *   **実装ファイル**: `src/app/api/chat/route.ts`
-*   **使用モデル**: `gemini-1.5-pro`
+*   **使用モデル**: `gemini-3-flash-preview`
 *   **生成設定**:
     *   `responseMimeType: "application/json"`: JSON形式での出力を強制。
     *   `temperature: 0.5`: 創造性を適度に抑制し、安定した回答を生成。
@@ -165,11 +171,6 @@ NEXTAUTH_SECRET= # openssl rand -base64 32 等で生成
 # Google Gemini API
 GEMINI_API_KEY=
 
-# Vercel KV (Redis)
-KV_URL=
-KV_REST_API_URL=
-KV_REST_API_TOKEN=
-KV_REST_API_READ_ONLY_TOKEN=
+# Vercel Blob
+BLOB_READ_WRITE_TOKEN=
 ```
-
-

@@ -1,40 +1,43 @@
 import { NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { put, list } from '@vercel/blob';
 
-// 設定を保存するキーのプレフィックス
-const SETTINGS_PREFIX = 'user_settings:';
+// 設定ファイルの固定名
+const SETTINGS_FILENAME = 'user_settings.json';
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const settings = await kv.get(`${SETTINGS_PREFIX}${session.user.email}`);
-    return NextResponse.json(settings || {});
+    // Blobからファイルリストを取得して設定ファイルを探す
+    const { blobs } = await list({ prefix: SETTINGS_FILENAME });
+    
+    // 一致するファイルを探す
+    const settingsBlob = blobs.find(blob => blob.pathname === SETTINGS_FILENAME);
+
+    if (!settingsBlob) {
+      // ファイルがない場合はデフォルト（空）を返す
+      return NextResponse.json({});
+    }
+
+    // ファイルの中身をfetchして返す
+    const res = await fetch(settingsBlob.url, { cache: 'no-store' });
+    const settings = await res.json();
+    
+    return NextResponse.json(settings);
   } catch (error) {
-    console.error("KV Get Error:", error);
+    console.error("Blob Get Error:", error);
     return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const body = await req.json();
-    await kv.set(`${SETTINGS_PREFIX}${session.user.email}`, body);
+    
+    // JSON文字列としてBlobに保存 (addRandomSuffix: false で上書き更新)
+    await put(SETTINGS_FILENAME, JSON.stringify(body), { access: 'public', addRandomSuffix: false });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("KV Set Error:", error);
+    console.error("Blob Set Error:", error);
     return NextResponse.json({ error: "Failed to save settings" }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { signIn } from "next-auth/react"; // useSessionは使わないので削除
+import { useSession, signIn } from "next-auth/react";
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
 
@@ -23,7 +23,7 @@ const formatChildrenAge = (children: any[]) => {
 };
 
 export default function Home() {
-  const session = null; // ログイン機能デバッグのため一時的に無効化
+  const { data: session } = useSession();
   const [recipes, setRecipes] = useState<string[]>([]);
   const [shoppingList, setShoppingList] = useState<string>(""); 
   const [loading, setLoading] = useState(false);
@@ -259,7 +259,6 @@ Markdown記法（\`\`\`json）や挨拶文は一切不要です。以下のJSON�
           </div>
         </div>
 
-        {/* ...（日数選択・要望カードは変更なし）... */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-lg">📅</span>
@@ -291,6 +290,7 @@ Markdown記法（\`\`\`json）や挨拶文は一切不要です。以下のJSON�
           <textarea 
             className="w-full border-2 border-gray-100 rounded-xl p-4 text-sm outline-none focus:border-blue-500 min-h-[100px] resize-none"
             placeholder="例：子供が喜ぶカレー、野菜多め、魚料理を入れたい..."
+            rows={4}
             value={freeInput}
             onChange={(e) => setFreeInput(e.target.value)}
           />
